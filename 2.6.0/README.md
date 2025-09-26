@@ -294,6 +294,9 @@ docker-compose ps
 
 # Check specific service health
 docker inspect --format='{{.State.Health.Status}}' nifi0
+
+# health check
+docker ps --filter "name=nifi" --format "table {{.Names}}\t{{.Status}}"
 ```
 
 ### Performance Tuning

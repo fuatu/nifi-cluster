@@ -1,18 +1,52 @@
 services:
   # ZooKeeper service for cluster coordination
-  zookeeper:
+  zookeeper1:
     image: zookeeper:3.9.2
-    container_name: nifi-zookeeper
-    hostname: zookeeper
+    container_name: nifi-zookeeper-1
+    hostname: zookeeper1
     ports:
       - "2181:2181"
     environment:
       ZOO_MY_ID: 1
-      ZOO_SERVERS: server.1=zookeeper:2888:3888;2181
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
       ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
     volumes:
-      - zookeeper_data:/data
-      - zookeeper_datalog:/datalog
+      - zookeeper1_data:/data
+      - zookeeper1_datalog:/datalog
+    networks:
+      - nifi-cluster
+    restart: unless-stopped
+
+  zookeeper2:
+    image: zookeeper:3.9.2
+    container_name: nifi-zookeeper-2
+    hostname: zookeeper2
+    ports:
+      - "2182:2181"
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+    volumes:
+      - zookeeper2_data:/data
+      - zookeeper2_datalog:/datalog
+    networks:
+      - nifi-cluster
+    restart: unless-stopped
+
+  zookeeper3:
+    image: zookeeper:3.9.2
+    container_name: nifi-zookeeper-3
+    hostname: zookeeper3
+    ports:
+      - "2183:2181"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+    volumes:
+      - zookeeper3_data:/data
+      - zookeeper3_datalog:/datalog
     networks:
       - nifi-cluster
     restart: unless-stopped
@@ -48,7 +82,7 @@ services:
       NIFI_CLUSTER_IS_NODE: 'true'
       NIFI_CLUSTER_NODE_PROTOCOL_PORT: 11443
       NIFI_CLUSTER_NODE_ADDRESS: nifi0
-      NIFI_ZK_CONNECT_STRING: zookeeper:2181
+      NIFI_ZK_CONNECT_STRING: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
       NIFI_ELECTION_MAX_WAIT: 30 secs
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
@@ -81,11 +115,13 @@ services:
     networks:
       - nifi-cluster
     depends_on:
-      - zookeeper
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
       - nifi-toolkit
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/nifi-api/system-diagnostics"]
+      test: ["CMD", "curl", "-k", "-f", "https://nifi0:8443/nifi"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -110,7 +146,7 @@ services:
       NIFI_CLUSTER_IS_NODE: 'true'
       NIFI_CLUSTER_NODE_PROTOCOL_PORT: 11443
       NIFI_CLUSTER_NODE_ADDRESS: nifi1
-      NIFI_ZK_CONNECT_STRING: zookeeper:2181
+      NIFI_ZK_CONNECT_STRING: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
       NIFI_ELECTION_MAX_WAIT: 30 secs
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
@@ -143,11 +179,13 @@ services:
     networks:
       - nifi-cluster
     depends_on:
-      - zookeeper
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
       - nifi-toolkit
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/nifi-api/system-diagnostics"]
+      test: ["CMD", "curl", "-k", "-f", "https://nifi1:8443/nifi"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -172,7 +210,7 @@ services:
       NIFI_CLUSTER_IS_NODE: 'true'
       NIFI_CLUSTER_NODE_PROTOCOL_PORT: 11443
       NIFI_CLUSTER_NODE_ADDRESS: nifi2
-      NIFI_ZK_CONNECT_STRING: zookeeper:2181
+      NIFI_ZK_CONNECT_STRING: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
       NIFI_ELECTION_MAX_WAIT: 30 secs
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
@@ -205,11 +243,13 @@ services:
     networks:
       - nifi-cluster
     depends_on:
-      - zookeeper
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
       - nifi-toolkit
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/nifi-api/system-diagnostics"]
+      test: ["CMD", "curl", "-k", "-f", "https://nifi2:8443/nifi"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -239,10 +279,18 @@ services:
       retries: 3
 
 volumes:
-  # ZooKeeper volumes
-  zookeeper_data:
+  # ZooKeeper volumes for 3-node cluster
+  zookeeper1_data:
     driver: local
-  zookeeper_datalog:
+  zookeeper1_datalog:
+    driver: local
+  zookeeper2_data:
+    driver: local
+  zookeeper2_datalog:
+    driver: local
+  zookeeper3_data:
+    driver: local
+  zookeeper3_datalog:
     driver: local
   
   # Shared certificate volume
