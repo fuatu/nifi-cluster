@@ -52,11 +52,11 @@ The cluster consists of:
    ```
    
    Then access the cluster:
-   - **Load Balanced URL**: https://localhost:8443/nifi/ (through Nginx)
+   - **Load Balanced URL**: https://localhost:8444/nifi/ (through Nginx)
    - **Direct Node Access**:
      - Node 0: https://nifi0:8443/nifi/
-     - Node 1: https://nifi1:8443/nifi/
-   - **HTTP Redirect**: http://localhost:80/nifi/ (redirects to HTTPS)
+     - Node 1: https://nifi1:9443/nifi/
+     - Node 2: https://nifi1:10443/nifi/
 
 5. **Login Credentials**:
    - Username: `admin`
@@ -144,7 +144,7 @@ docker-compose up -d
 
 ### Local Development Setup
 
-**Important**: For local testing, you need to add hostname resolution to your `/etc/hosts` file:
+**Important**: For local testing, you may add hostname resolution to your `/etc/hosts` file:
 
 ```bash
 # Add these entries to /etc/hosts for local development
@@ -178,17 +178,17 @@ The cluster uses a custom Docker network (`nifi-cluster`) with subnet `172.20.0.
 
 | Service | Internal Port | External Port | Purpose |
 |---------|---------------|---------------|---------|
-| nginx | 8443 | 8443 | Load balanced HTTPS access |
+| nginx | 8443 | 8444 | Load balanced HTTPS access |
 | nginx | 80 | 80 | HTTP redirect to HTTPS |
 | nifi0 | 8443 | 8443 | Direct node HTTPS access |
-| nifi1 | 8443 | 8443 | Direct node HTTPS access |
-| nifi2 | 8443 | 8443 | Direct node HTTPS access |
+| nifi1 | 8443 | 9443 | Direct node HTTPS access |
+| nifi2 | 8443 | 10443 | Direct node HTTPS access |
 | zookeeper | 2181 | 2181 | Cluster coordination |
 
 **Access URLs:**
-- **Load Balanced**: https://localhost:8443/nifi/ (recommended)
-- **Direct Node Access**: https://nifi0:8443/nifi/ or https://nifi1:8443/nifi/
-- **HTTP Redirect**: http://localhost:80/nifi/ → https://localhost:8443/nifi/
+- **Load Balanced**: https://localhost:8444/nifi/ (recommended)
+- **Direct Node Access**: https://nifi0:8443/nifi/ or https://nifi1:9443/nifi/ or https://nifi2:10443/nifi/
+
 
 ## Management Commands
 
@@ -257,10 +257,11 @@ docker-compose up -d
    
    # Test direct node access (requires /etc/hosts entry)
    curl -k https://nifi0:8443/nifi/
-   curl -k https://nifi1:8443/nifi/
+   curl -k https://nifi1:9443/nifi/
+   curl -k https://nifi2:10443/nifi/
    
    # Test load balanced access
-   curl -k https://localhost:8443/nifi/
+   curl -k https://localhost:8444/nifi/
    ```
 
 4. **SSL Certificate Issues**:
