@@ -52,7 +52,7 @@ The cluster consists of:
    ```
    
    Then access the cluster:
-   - **Load Balanced URL**: https://localhost:8444/nifi/ (through Nginx)
+   - **Load Balanced URL**: https://localhost:8444/nifi/ (through Nginx) ** This is buggy and some requests are not going throug nginx and failing **
    - **Direct Node Access**:
      - Node 0: https://nifi0:8443/nifi/
      - Node 1: https://nifi1:9443/nifi/
