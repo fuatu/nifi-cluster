@@ -1,0 +1,44 @@
+= nifi-docker-compose
+
+_Based on an original idea from link:https://community.cloudera.com/t5/user/viewprofilepage/user-id/98373[@Arqui] in this link:https://community.cloudera.com/t5/Support-Questions/NiFi-single-user-Certificate-and-Token-not-found/m-p/345007/highlight/true#M234326[community forum post]._
+
+The link:https://hub.docker.com/r/apache/nifi[Apache NiFi Docker image] is a pretty handy way to quickly launch a single-node NiFi cluster.
+
+This docker-compose configuration file uses the NiFi docker image to launch a 2-node NiFi cluster.
+The NiFi configuration and repositories are persisted in Docker volumes, so they survive cluster restarts.
+
+The cluster is configured to use the `single-user` provider and authorizer. The default credentials are `admin/supersecret1`. You can change this in the configuration file if needed.
+
+A `nginx` service is also part of the deployment to distribute connections to both NiFi nodes. To connect to the cluster, point your browser to `https://localhost:8443/nifi`.
+
+== Starting the cluster
+
+Execute the following command on this directory:
+
+[source,shell]
+----
+docker compose up -d
+----
+
+== Stopping the cluster
+
+Execute the following command on this directory:
+
+[source,shell]
+----
+docker compose down
+----
+
+== Resetting the cluster content
+
+If you want to clear/discard the content of your NiFi cluster so that you can start a fresh one, execute the following commands on this directory:
+
+[source,shell]
+----
+docker compose down
+docker volume rm $(docker volume ls -q --filter "name=nifi-docker-compose")
+docker-compose down -v --remove-orphans
+----
+
+https://raw.githubusercontent.com/asdaraujo/nifi-stuff/refs/heads/main/nifi-docker-compose/README.adoc
+

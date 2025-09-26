@@ -1,0 +1,227 @@
+services:
+  # ZooKeeper service for cluster coordination
+  zookeeper:
+    image: zookeeper:3.9.2
+    container_name: nifi-zookeeper
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,conf,ruok
+    volumes:
+      - zookeeper_data:/data
+      - zookeeper_datalog:/datalog
+    networks:
+      - nifi-cluster
+    restart: unless-stopped
+
+  # NiFi Toolkit for certificate generation (using 1.28.1 for TLS toolkit compatibility)
+  nifi-toolkit:
+    image: apache/nifi-toolkit:1.28.1
+    container_name: nifi-toolkit
+    hostname: nifi-toolkit
+    user: root
+    entrypoint: ["bash", "-c", "/opt/nifi-toolkit/nifi-toolkit-1.28.1/bin/tls-toolkit.sh standalone -o /opt/certs -n 'nifi0,nifi1' -P supersecret1 -K supersecret1 -S supersecret1; chown -R nifi:nifi /opt/certs"]
+    volumes:
+      - nifi_certs:/opt/certs
+    networks:
+      - nifi-cluster
+    restart: "no"
+
+  # NiFi Node 0
+  nifi0:
+    image: apache/nifi:2.6.0
+    container_name: nifi0
+    hostname: nifi0
+    ports:
+      - "8443:8443"
+      - "8000:8000"
+      - "10000:10000"
+    environment:
+      # Java 21 configuration
+      NIFI_JVM_HEAP_INIT: 2g
+      NIFI_JVM_HEAP_MAX: 2g
+      
+      # Cluster configuration
+      NIFI_CLUSTER_IS_NODE: 'true'
+      NIFI_CLUSTER_NODE_PROTOCOL_PORT: 11443
+      NIFI_CLUSTER_NODE_ADDRESS: nifi0
+      NIFI_ZK_CONNECT_STRING: zookeeper:2181
+      NIFI_ELECTION_MAX_WAIT: 30 secs
+      NIFI_ELECTION_MAX_CANDIDATES: 2
+      
+      # Web configuration
+      NIFI_WEB_HTTPS_HOST: nifi0
+      NIFI_WEB_HTTPS_PORT: 8443
+      NIFI_WEB_HTTP_PORT: ''
+      
+      # Remote input port configuration
+      NIFI_REMOTE_INPUT_HOST: nifi0
+      NIFI_REMOTE_INPUT_SECURE: 'true'
+      NIFI_REMOTE_INPUT_SOCKET_PORT: 10000
+      
+      # Single user authentication
+      SINGLE_USER_CREDENTIALS_USERNAME: admin
+      SINGLE_USER_CREDENTIALS_PASSWORD: supersecret1
+      
+      # Sensitive properties key
+      NIFI_SENSITIVE_PROPS_KEY: 'nifi-cluster-key-2024'
+    volumes:
+      - nifi_certs:/opt/certs:ro
+      - ./init-certs.sh:/init-certs.sh:ro
+      - nifi0_conf:/opt/nifi/nifi-current/conf
+      - nifi0_database_repository:/opt/nifi/nifi-current/database_repository
+      - nifi0_flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
+      - nifi0_content_repository:/opt/nifi/nifi-current/content_repository
+      - nifi0_provenance_repository:/opt/nifi/nifi-current/provenance_repository
+      - nifi0_state:/opt/nifi/nifi-current/state
+      - nifi0_logs:/opt/nifi/nifi-current/logs
+    networks:
+      - nifi-cluster
+    depends_on:
+      - zookeeper
+      - nifi-toolkit
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/nifi-api/system-diagnostics"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    entrypoint: ["/init-certs.sh", "nifi0"]
+
+  # NiFi Node 1
+  nifi1:
+    image: apache/nifi:2.6.0
+    container_name: nifi1
+    hostname: nifi1
+    ports:
+      - "9443:8443"
+      - "9000:8000"
+      - "11000:10000"
+    environment:
+      # Java 21 configuration
+      NIFI_JVM_HEAP_INIT: 2g
+      NIFI_JVM_HEAP_MAX: 2g
+      
+      # Cluster configuration
+      NIFI_CLUSTER_IS_NODE: 'true'
+      NIFI_CLUSTER_NODE_PROTOCOL_PORT: 11443
+      NIFI_CLUSTER_NODE_ADDRESS: nifi1
+      NIFI_ZK_CONNECT_STRING: zookeeper:2181
+      NIFI_ELECTION_MAX_WAIT: 30 secs
+      NIFI_ELECTION_MAX_CANDIDATES: 2
+      
+      # Web configuration
+      NIFI_WEB_HTTPS_HOST: nifi1
+      NIFI_WEB_HTTPS_PORT: 8443
+      NIFI_WEB_HTTP_PORT: ''
+      
+      # Remote input port configuration
+      NIFI_REMOTE_INPUT_HOST: nifi1
+      NIFI_REMOTE_INPUT_SECURE: 'true'
+      NIFI_REMOTE_INPUT_SOCKET_PORT: 10000
+      
+      # Single user authentication
+      SINGLE_USER_CREDENTIALS_USERNAME: admin
+      SINGLE_USER_CREDENTIALS_PASSWORD: supersecret1
+      
+      # Sensitive properties key
+      NIFI_SENSITIVE_PROPS_KEY: 'nifi-cluster-key-2024'
+    volumes:
+      - nifi_certs:/opt/certs:ro
+      - ./init-certs.sh:/init-certs.sh:ro
+      - nifi1_conf:/opt/nifi/nifi-current/conf
+      - nifi1_database_repository:/opt/nifi/nifi-current/database_repository
+      - nifi1_flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
+      - nifi1_content_repository:/opt/nifi/nifi-current/content_repository
+      - nifi1_provenance_repository:/opt/nifi/nifi-current/provenance_repository
+      - nifi1_state:/opt/nifi/nifi-current/state
+      - nifi1_logs:/opt/nifi/nifi-current/logs
+    networks:
+      - nifi-cluster
+    depends_on:
+      - zookeeper
+      - nifi-toolkit
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/nifi-api/system-diagnostics"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    entrypoint: ["/init-certs.sh", "nifi1"]
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nifi-nginx
+    hostname: nginx
+    ports:
+      - "8444:8443"  # Changed from 8443 to avoid conflicts
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - nifi-cluster
+    depends_on:
+      - nifi0
+      - nifi1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  # ZooKeeper volumes
+  zookeeper_data:
+    driver: local
+  zookeeper_datalog:
+    driver: local
+  
+  # Shared certificate volume
+  nifi_certs:
+    driver: local
+  
+  # NiFi Node 0 volumes
+  nifi0_conf:
+    driver: local
+  nifi0_database_repository:
+    driver: local
+  nifi0_flowfile_repository:
+    driver: local
+  nifi0_content_repository:
+    driver: local
+  nifi0_provenance_repository:
+    driver: local
+  nifi0_state:
+    driver: local
+  nifi0_logs:
+    driver: local
+  
+  # NiFi Node 1 volumes
+  nifi1_conf:
+    driver: local
+  nifi1_database_repository:
+    driver: local
+  nifi1_flowfile_repository:
+    driver: local
+  nifi1_content_repository:
+    driver: local
+  nifi1_provenance_repository:
+    driver: local
+  nifi1_state:
+    driver: local
+  nifi1_logs:
+    driver: local
+
+networks:
+  nifi-cluster:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
