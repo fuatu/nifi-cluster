@@ -87,9 +87,10 @@ services:
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
       # Web configuration
-      NIFI_WEB_HTTPS_HOST: ''
+      NIFI_WEB_HTTPS_HOST: '0.0.0.0'
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
+      NIFI_WEB_PROXY_HOST: 'localhost:8443,nifi0:8443'
       
       # Remote input port configuration
       NIFI_REMOTE_INPUT_HOST: nifi0
@@ -151,9 +152,10 @@ services:
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
       # Web configuration
-      NIFI_WEB_HTTPS_HOST: ''
+      NIFI_WEB_HTTPS_HOST: '0.0.0.0'
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
+      NIFI_WEB_PROXY_HOST: 'localhost:9443,nifi1:8443'
       
       # Remote input port configuration
       NIFI_REMOTE_INPUT_HOST: nifi1
@@ -215,9 +217,10 @@ services:
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
       # Web configuration
-      NIFI_WEB_HTTPS_HOST: ''
+      NIFI_WEB_HTTPS_HOST: '0.0.0.0'
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
+      NIFI_WEB_PROXY_HOST: 'localhost:10443,nifi2:8443'
       
       # Remote input port configuration
       NIFI_REMOTE_INPUT_HOST: nifi2
