@@ -5,7 +5,7 @@ This directory contains a complete Docker Compose setup for running a secure, hi
 ## Architecture Overview
 
 The cluster consists of:
-- **2 NiFi nodes** (nifi0, nifi1) running Apache NiFi 2.6.0 with Java 21
+- **3 NiFi nodes** (nifi0, nifi1, nifi2) running Apache NiFi 2.6.0 with Java 21
 - **1 ZooKeeper instance** for cluster coordination
 - **1 NiFi Toolkit container** for automatic TLS certificate generation
 - **1 Nginx load balancer** for distributing traffic across nodes
@@ -48,7 +48,7 @@ The cluster consists of:
    **Important**: First add hostname resolution for SSL certificates:
    ```bash
    # Required for SSL certificate validation
-   echo "127.0.0.1 nifi0 nifi1" | sudo tee -a /etc/hosts
+   echo "127.0.0.1 nifi0 nifi1 nifi2" | sudo tee -a /etc/hosts
    ```
    
    Then access the cluster:
@@ -82,7 +82,7 @@ The `nifi-toolkit` service automatically generates all required certificates usi
 
 **Generated Files per Node:**
 ```
-/opt/certs/nifi0/ (and nifi1/)
+/opt/certs/nifi0/ (and nifi1/nifi2/)
 ├── keystore.jks          # Node's private key and certificate
 ├── truststore.jks        # Trusted CA certificates  
 └── nifi.properties       # Auto-configured SSL properties
@@ -102,6 +102,10 @@ All certificates are stored in the shared `260_nifi_certs` Docker volume:
 │   ├── truststore.jks
 │   └── nifi.properties
 ├── nifi1/
+│   ├── keystore.jks
+│   ├── truststore.jks
+│   └── nifi.properties
+├── nifi2/
 │   ├── keystore.jks
 │   ├── truststore.jks
 │   └── nifi.properties
@@ -166,6 +170,7 @@ This is required because:
 The cluster uses a custom Docker network (`nifi-cluster`) with subnet `172.20.0.0/16`:
 - **nifi0**: Internal communication on port 8443
 - **nifi1**: Internal communication on port 8443  
+- **nifi2**: Internal communication on port 8443  
 - **zookeeper**: Coordination on port 2181
 - **nginx**: Load balancing on port 8443
 
@@ -177,6 +182,7 @@ The cluster uses a custom Docker network (`nifi-cluster`) with subnet `172.20.0.
 | nginx | 80 | 80 | HTTP redirect to HTTPS |
 | nifi0 | 8443 | 8443 | Direct node HTTPS access |
 | nifi1 | 8443 | 8443 | Direct node HTTPS access |
+| nifi2 | 8443 | 8443 | Direct node HTTPS access |
 | zookeeper | 2181 | 2181 | Cluster coordination |
 
 **Access URLs:**
@@ -241,6 +247,7 @@ docker-compose up -d
    # Verify node logs
    docker-compose logs nifi0
    docker-compose logs nifi1
+   docker-compose logs nifi2
    ```
 
 3. **Load balancer issues**:
@@ -271,11 +278,11 @@ docker-compose up -d
 5. **Hostname Resolution Issues**:
    ```bash
    # Verify /etc/hosts entry
-   grep "nifi0\|nifi1" /etc/hosts
+   grep "nifi0\|nifi1\|nifi2" /etc/hosts
    
-   # Should show: 127.0.0.1 nifi0 nifi1
+   # Should show: 127.0.0.1 nifi0 nifi1 nifi2
    # If missing, add it:
-   echo "127.0.0.1 nifi0 nifi1" | sudo tee -a /etc/hosts
+   echo "127.0.0.1 nifi0 nifi1 nifi2" | sudo tee -a /etc/hosts
    ```
 
 ### Health Checks

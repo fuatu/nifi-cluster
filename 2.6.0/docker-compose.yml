@@ -23,7 +23,7 @@ services:
     container_name: nifi-toolkit
     hostname: nifi-toolkit
     user: root
-    entrypoint: ["bash", "-c", "/opt/nifi-toolkit/nifi-toolkit-1.28.1/bin/tls-toolkit.sh standalone -o /opt/certs -n 'nifi0,nifi1' -P supersecret1 -K supersecret1 -S supersecret1; chown -R nifi:nifi /opt/certs"]
+    entrypoint: ["bash", "-c", "/opt/nifi-toolkit/nifi-toolkit-1.28.1/bin/tls-toolkit.sh standalone -o /opt/certs -n 'nifi0,nifi1,nifi2' -P supersecret1 -K supersecret1 -S supersecret1; chown -R nifi:nifi /opt/certs"]
     volumes:
       - nifi_certs:/opt/certs
     networks:
@@ -99,7 +99,7 @@ services:
     hostname: nifi1
     ports:
       - "9443:8443"
-      - "9000:8000"
+      - "8001:8000"
       - "11000:10000"
     environment:
       # Java 21 configuration
@@ -153,6 +153,68 @@ services:
       retries: 5
       start_period: 120s
     entrypoint: ["/init-certs.sh", "nifi1"]
+
+  # NiFi Node 2
+  nifi2:
+    image: apache/nifi:2.6.0
+    container_name: nifi2
+    hostname: nifi2
+    ports:
+      - "10443:8443"
+      - "8002:8000"
+      - "12000:10000"
+    environment:
+      # Java 21 configuration
+      NIFI_JVM_HEAP_INIT: 2g
+      NIFI_JVM_HEAP_MAX: 2g
+      
+      # Cluster configuration
+      NIFI_CLUSTER_IS_NODE: 'true'
+      NIFI_CLUSTER_NODE_PROTOCOL_PORT: 11443
+      NIFI_CLUSTER_NODE_ADDRESS: nifi2
+      NIFI_ZK_CONNECT_STRING: zookeeper:2181
+      NIFI_ELECTION_MAX_WAIT: 30 secs
+      NIFI_ELECTION_MAX_CANDIDATES: 2
+      
+      # Web configuration
+      NIFI_WEB_HTTPS_HOST: nifi2
+      NIFI_WEB_HTTPS_PORT: 8443
+      NIFI_WEB_HTTP_PORT: ''
+      
+      # Remote input port configuration
+      NIFI_REMOTE_INPUT_HOST: nifi2
+      NIFI_REMOTE_INPUT_SECURE: 'true'
+      NIFI_REMOTE_INPUT_SOCKET_PORT: 10000
+      
+      # Single user authentication
+      SINGLE_USER_CREDENTIALS_USERNAME: admin
+      SINGLE_USER_CREDENTIALS_PASSWORD: supersecret1
+      
+      # Sensitive properties key
+      NIFI_SENSITIVE_PROPS_KEY: 'nifi-cluster-key-2024'
+    volumes:
+      - nifi_certs:/opt/certs:ro
+      - ./init-certs.sh:/init-certs.sh:ro
+      - nifi2_conf:/opt/nifi/nifi-current/conf
+      - nifi2_database_repository:/opt/nifi/nifi-current/database_repository
+      - nifi2_flowfile_repository:/opt/nifi/nifi-current/flowfile_repository
+      - nifi2_content_repository:/opt/nifi/nifi-current/content_repository
+      - nifi2_provenance_repository:/opt/nifi/nifi-current/provenance_repository
+      - nifi2_state:/opt/nifi/nifi-current/state
+      - nifi2_logs:/opt/nifi/nifi-current/logs
+    networks:
+      - nifi-cluster
+    depends_on:
+      - zookeeper
+      - nifi-toolkit
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost:8443/nifi-api/system-diagnostics"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    entrypoint: ["/init-certs.sh", "nifi2"]
 
   # Nginx Load Balancer
   nginx:
@@ -217,6 +279,22 @@ volumes:
   nifi1_state:
     driver: local
   nifi1_logs:
+    driver: local
+  
+  # NiFi Node 2 volumes
+  nifi2_conf:
+    driver: local
+  nifi2_database_repository:
+    driver: local
+  nifi2_flowfile_repository:
+    driver: local
+  nifi2_content_repository:
+    driver: local
+  nifi2_provenance_repository:
+    driver: local
+  nifi2_state:
+    driver: local
+  nifi2_logs:
     driver: local
 
 networks:
