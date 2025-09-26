@@ -57,7 +57,7 @@ services:
     container_name: nifi-toolkit
     hostname: nifi-toolkit
     user: root
-    entrypoint: ["bash", "-c", "/opt/nifi-toolkit/nifi-toolkit-1.28.1/bin/tls-toolkit.sh standalone -o /opt/certs -n 'nifi0,nifi1,nifi2' -P supersecret1 -K supersecret1 -S supersecret1; chown -R nifi:nifi /opt/certs"]
+    entrypoint: ["bash", "-c", "/opt/nifi-toolkit/nifi-toolkit-1.28.1/bin/tls-toolkit.sh standalone -o /opt/certs -n 'nifi0,nifi1,nifi2' --subjectAlternativeNames 'localhost' -P supersecret1 -K supersecret1 -S supersecret1; chown -R nifi:nifi /opt/certs"]
     volumes:
       - nifi_certs:/opt/certs
     networks:
@@ -87,7 +87,7 @@ services:
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
       # Web configuration
-      NIFI_WEB_HTTPS_HOST: nifi0
+      NIFI_WEB_HTTPS_HOST: ''
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
       
@@ -151,7 +151,7 @@ services:
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
       # Web configuration
-      NIFI_WEB_HTTPS_HOST: nifi1
+      NIFI_WEB_HTTPS_HOST: ''
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
       
@@ -215,7 +215,7 @@ services:
       NIFI_ELECTION_MAX_CANDIDATES: 2
       
       # Web configuration
-      NIFI_WEB_HTTPS_HOST: nifi2
+      NIFI_WEB_HTTPS_HOST: ''
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
       
