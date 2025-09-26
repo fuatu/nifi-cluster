@@ -90,7 +90,7 @@ services:
       NIFI_WEB_HTTPS_HOST: nifi0
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
-      NIFI_WEB_PROXY_HOST: 'localhost:8443,nifi0:8443'
+      NIFI_WEB_PROXY_HOST: 'localhost:8443,localhost:8444,nifi0:8443'
       
       # Remote input port configuration
       NIFI_REMOTE_INPUT_HOST: nifi0
@@ -155,7 +155,7 @@ services:
       NIFI_WEB_HTTPS_HOST: nifi1
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
-      NIFI_WEB_PROXY_HOST: 'localhost:9443,nifi1:8443'
+      NIFI_WEB_PROXY_HOST: 'localhost:9443,localhost:8444,nifi1:8443'
       
       # Remote input port configuration
       NIFI_REMOTE_INPUT_HOST: nifi1
@@ -220,7 +220,7 @@ services:
       NIFI_WEB_HTTPS_HOST: nifi2
       NIFI_WEB_HTTPS_PORT: 8443
       NIFI_WEB_HTTP_PORT: ''
-      NIFI_WEB_PROXY_HOST: 'localhost:10443,nifi2:8443'
+      NIFI_WEB_PROXY_HOST: 'localhost:10443,localhost:8444,nifi2:8443'
       
       # Remote input port configuration
       NIFI_REMOTE_INPUT_HOST: nifi2
@@ -269,11 +269,13 @@ services:
       - "80:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - nifi_certs:/opt/certs:ro
     networks:
       - nifi-cluster
     depends_on:
       - nifi0
       - nifi1
+      - nifi-toolkit
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "nginx", "-t"]

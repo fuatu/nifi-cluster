@@ -299,6 +299,14 @@ docker inspect --format='{{.State.Health.Status}}' nifi0
 docker ps --filter "name=nifi" --format "table {{.Names}}\t{{.Status}}"
 ```
 
+### API checks
+https://localhost:8444/nifi-api/flow/cluster/summary
+https://localhost:8444/nifi-api/system-diagnostics
+https://localhost:8444/nifi-api/controller/cluster
+
+doc https://nifi.apache.org/nifi-docs/rest-api.html
+
+
 ### Performance Tuning
 
 For production use, consider adjusting:
