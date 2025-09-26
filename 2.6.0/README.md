@@ -30,7 +30,7 @@ The cluster consists of:
 
 1. **Clone or navigate to this directory**:
    ```bash
-   cd /Users/fuatu/Projects/fliff/nifi-local-cluster/2.6.0
+   cd ../nifi-local-cluster/2.6.0
    ```
 
 2. **Start the cluster**:
